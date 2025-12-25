@@ -73,6 +73,44 @@ async def get_status_checks():
     
     return status_checks
 
+@api_router.post("/contact")
+async def submit_contact_form(submission: ContactFormSubmission):
+    """
+    Handle contact form submission and send email
+    """
+    try:
+        logger.info(f"Received contact form submission from {submission.email}")
+        
+        # Send email using email service
+        success = email_service.send_contact_form_email(
+            name=submission.name,
+            email=submission.email,
+            phone=submission.phone,
+            message=submission.message
+        )
+        
+        if success:
+            logger.info(f"Contact form email sent successfully for {submission.name}")
+            return {
+                "success": True,
+                "message": "Message sent successfully. We'll get back to you soon!"
+            }
+        else:
+            logger.error(f"Failed to send contact form email for {submission.name}")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to send message. Please try again later or call us directly."
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error processing contact form: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred. Please try again later."
+        )
+
 # Include the router in the main app
 app.include_router(api_router)
 
