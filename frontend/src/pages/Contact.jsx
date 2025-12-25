@@ -47,25 +47,25 @@ const Contact = () => {
 
     setIsSubmitting(true);
     
-    // Mock submission - save to localStorage for demo
     try {
-      const submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
-      submissions.push({
-        ...formData,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
-
-      toast({
-        title: language === 'en' ? 'Success!' : 'வெற்றி!',
-        description: t.contact.form.success,
-      });
-
-      setFormData({ name: '', email: '', phone: '', message: '' });
+      const response = await axios.post(`${API}/contact`, formData);
+      
+      if (response.data.success) {
+        toast({
+          title: language === 'en' ? 'Success!' : 'வெற்றி!',
+          description: t.contact.form.success,
+        });
+        
+        setFormData({ name: '', email: '', phone: '', message: '' });
+      }
     } catch (error) {
+      console.error('Error submitting contact form:', error);
+      const errorMessage = error.response?.data?.detail || 
+        (language === 'en' ? 'Failed to send message. Please try calling us directly.' : 'செய்தி அனுப்புவதில் தோல்வி. தயவுசெய்து நேரடியாக எங்களை அழைக்கவும்.');
+      
       toast({
         title: language === 'en' ? 'Error' : 'பிழை',
-        description: language === 'en' ? 'Something went wrong' : 'ஏதோ தவறு நடந்தது',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
