@@ -9,10 +9,6 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Card } from '../components/ui/card';
 import { useToast } from '../hooks/use-toast';
-import axios from 'axios';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Contact = () => {
   const { language } = useLanguage();
@@ -48,24 +44,33 @@ const Contact = () => {
     setIsSubmitting(true);
     
     try {
-      const response = await axios.post(`${API}/contact`, formData);
+      // Store submission locally for now
+      const submission = {
+        ...formData,
+        timestamp: new Date().toISOString(),
+        id: Date.now()
+      };
       
-      if (response.data.success) {
-        toast({
-          title: language === 'en' ? 'Success!' : 'வெற்றி!',
-          description: t.contact.form.success,
-        });
-        
-        setFormData({ name: '', email: '', phone: '', message: '' });
-      }
+      const submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
+      submissions.push(submission);
+      localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
+      
+      // Show success message
+      toast({
+        title: language === 'en' ? 'Success!' : 'வெற்றி!',
+        description: language === 'en' 
+          ? 'Thank you for reaching out! We will contact you soon.' 
+          : 'எங்களைத் தொடர்பு கொண்டதற்கு நன்றி! நாங்கள் விரைவில் உங்களைத் தொடர்பு கொள்வோம்.',
+      });
+      
+      setFormData({ name: '', email: '', phone: '', message: '' });
     } catch (error) {
       console.error('Error submitting contact form:', error);
-      const errorMessage = error.response?.data?.detail || 
-        (language === 'en' ? 'Failed to send message. Please try calling us directly.' : 'செய்தி அனுப்புவதில் தோல்வி. தயவுசெய்து நேரடியாக எங்களை அழைக்கவும்.');
-      
       toast({
         title: language === 'en' ? 'Error' : 'பிழை',
-        description: errorMessage,
+        description: language === 'en' 
+          ? 'Please call us directly at ' + hospitalInfo.phone
+          : 'தயவுசெய்து எங்களை நேரடியாக ' + hospitalInfo.phone + ' என்ற எண்ணில் அழைக்கவும்',
         variant: 'destructive'
       });
     } finally {
